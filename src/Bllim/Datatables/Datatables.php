@@ -360,18 +360,14 @@ class Datatables
 
 	private function filtering()
 	{
-		
-		
+		$copy_this = $this;
+
 		if (Input::get('sSearch','') != '')
 		{
-			$copy_this = $this;
 
 			$this->query->where(function($query) use ($copy_this) {
 
 				$db_prefix = $copy_this->database_prefix();
-				
-				
-
 				for ($i=0,$c=count($copy_this->columns);$i<$c;$i++)
 				{
 					if (Input::get('bSearchable_'.$i) == "true")
@@ -403,17 +399,19 @@ class Datatables
 		{
 			if (Input::get('bSearchable_'.$i) == "true" && Input::get('sSearch_'.$i) != '')
 			{
+				preg_match('#^(\S*?)\s+as\s+(\S*?)$#si',$copy_this->columns[$i],$matches);
+				$column = empty($matches) ? $copy_this->columns[$i] : $matches[1];
 				$keyword = '%'.Input::get('sSearch_'.$i).'%';
 
 				if(Config::get('datatables.search.use_wildcards', false)) {
 					$keyword = $copy_this->wildcard_like_string(Input::get('sSearch_'.$i));
 				}
 
+				$column = $db_prefix . $column;
 				if(Config::get('datatables.search.case_insensitive', false)) {
-					$column = $db_prefix . $this->columns[$i];
 					$this->query->where(DB::raw('LOWER('.$column.')'),'LIKE', $keyword);
 				} else {
-					$this->query->where($this->columns[$i], 'LIKE', $keyword);
+					$this->query->where($column, 'LIKE', $keyword);
 				}
 			}
 		}
